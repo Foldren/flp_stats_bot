@@ -6,8 +6,6 @@ services:
     restart: unless-stopped
     environment:
       - TZ=Europe/Moscow
-    env_file:
-      - ./source/.env
     depends_on:
       - cache
     networks:
