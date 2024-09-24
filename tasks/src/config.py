@@ -1,7 +1,9 @@
-from os import getenv
+from os import getenv, getcwd
 from dotenv import load_dotenv
 
 load_dotenv()
+
+ROOT_DIR = getcwd()
 
 PG_URL = getenv('PG_URL')
 
@@ -26,6 +28,18 @@ PW_OPTS = (
     '--window-size=516,950',
 )
 
-BANKS_URLS = {
-    'Maybank': 'https://m2e.maybank.co.id/'
+TORTOISE_CONFIG = {
+    "connections": {
+        "bot": {
+            "engine": "tortoise.backends.sqlite",
+            "credentials": {
+                "file_path": PG_URL,
+            }
+        }
+    },
+    "apps": {
+        "bot": {"models": ["models"], "default_connection": "bot"},
+    },
+    'use_tz': True,
+    'timezone': 'Europe/Moscow'
 }

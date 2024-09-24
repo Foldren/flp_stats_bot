@@ -11,5 +11,5 @@ class TransactionType(str, Enum):
 
 
 class BankStatus(str, Enum):
-    INVALID_DATA = "Неккоретные данные входа"
-    READY = "Готов к подгрузке"
+    INVALID_DATA = "Невалидный"
+    READY = "Готов"

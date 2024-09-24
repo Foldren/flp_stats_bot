@@ -1,6 +1,8 @@
 from asyncio import sleep
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from config import APP_NAME
+from tortoise import Tortoise
+
+from config import APP_NAME, TORTOISE_CONFIG
 from modules.logger import Logger
 
 
@@ -17,3 +19,8 @@ async def start_sheduler(sch: AsyncIOScheduler) -> None:
             await sleep(1000)
     except (KeyboardInterrupt, SystemExit):
         pass
+
+
+async def init_db():
+    await Tortoise.init(TORTOISE_CONFIG)  # Подключаем бд
+    await Tortoise.generate_schemas(safe=True)
