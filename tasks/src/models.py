@@ -1,6 +1,7 @@
 from tortoise import Model
 from tortoise.fields import BigIntField, \
-    CharEnumField, ForeignKeyRelation, ForeignKeyField, OnDelete, ReverseRelation, CharField, BinaryField
+    CharEnumField, ForeignKeyRelation, ForeignKeyField, OnDelete, ReverseRelation, CharField, BinaryField, \
+    DatetimeField, FloatField
 from components import enums
 
 
@@ -12,22 +13,26 @@ class User(Model):
 class Bank(Model):
     id = BigIntField(pk=True)
     user: ForeignKeyRelation['User'] = ForeignKeyField('bot.User', on_delete=OnDelete.CASCADE, related_name="banks")
+    p_accounts: ReverseRelation['PaymentAccount']
     name = CharField(max_length=20)
     type = CharEnumField(enum_type=enums.BankType)
     json_hash_data = BinaryField()
     status = CharEnumField(enum_type=enums.BankStatus, default=enums.BankStatus.READY)
 
 
-class Account(Model):
+class PaymentAccount(Model):
     id = BigIntField(pk=True)
-    inn = BigIntField()
-    currency = CharField(max_length=3)
+    bank: ForeignKeyRelation['PaymentAccount'] = ForeignKeyField('bot.Bank', on_delete=OnDelete.CASCADE,
+                                                                 related_name="payment_accounts")
     transactions: ReverseRelation['Transaction']
+    number = BigIntField()
+    currency = CharField(max_length=10)
 
 
 class Transaction(Model):
     id = BigIntField(pk=True)
-    account: ForeignKeyRelation['Account'] = ForeignKeyField('bot.Account', on_delete=OnDelete.CASCADE, related_name="transactions")
+    p_account: ForeignKeyRelation['PaymentAccount'] = ForeignKeyField('bot.PaymentAccount', on_delete=OnDelete.CASCADE,
+                                                                      related_name="transactions")
     trxn_id = CharField(max_length=40)
-    amount = BigIntField()
-    type = CharEnumField(enum_type=enums.TransactionType, max_length=20)
+    time = DatetimeField()
+    amount = FloatField()
