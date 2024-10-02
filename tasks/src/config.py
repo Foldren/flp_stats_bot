@@ -5,7 +5,7 @@ load_dotenv()
 
 ROOT_DIR = getcwd()
 
-PG_URL = getenv('PG_URL')
+SQL_URL = getenv('SQL_URL')
 
 APP_NAME = "stats_tasks"
 
@@ -27,19 +27,3 @@ PW_OPTS = (
     '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',
     '--window-size=516,950',
 )
-
-TORTOISE_CONFIG = {
-    "connections": {
-        "bot": {
-            "engine": "tortoise.backends.sqlite",
-            "credentials": {
-                "file_path": PG_URL,
-            }
-        }
-    },
-    "apps": {
-        "bot": {"models": ["models"], "default_connection": "bot"},
-    },
-    'use_tz': True,
-    'timezone': 'Europe/Moscow'
-}

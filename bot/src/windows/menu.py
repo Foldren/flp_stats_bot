@@ -2,8 +2,7 @@ from aiogram_dialog import Window, ShowMode
 from aiogram_dialog.widgets.kbd import Group, Start
 from aiogram_dialog.widgets.markup.reply_keyboard import ReplyKeyboardFactory
 from aiogram_dialog.widgets.text import Multi, Const, Format
-from components.states import MenuStates, GetBanksStates
-
+from components.states import MenuStates, GetBanksStates, UploadStates
 
 w_main = Window(
     Multi(
@@ -13,11 +12,11 @@ w_main = Window(
               f"<b>🔹 Выгрузка АО</b> - выгрузить выписки в формате Excel файла, за определенный интервал."),
         sep="\n\n"
     ),
-    # Group(
+    Group(
         Start(text=Const("Банки"), id="banks", state=GetBanksStates.render, show_mode=ShowMode.DELETE_AND_SEND),
-        # Start(text=Const("Выгрузка"), id="upload", state=UploadStates.select_bank),
-        # width=2
-    # ),
+        Start(text=Const("Выгрузка"), id="upload", state=UploadStates.select_bank),
+        width=2
+    ),
     state=MenuStates.main,
     markup_factory=ReplyKeyboardFactory(resize_keyboard=True, input_field_placeholder=Const("Главное меню"))
 )

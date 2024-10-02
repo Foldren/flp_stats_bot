@@ -19,7 +19,7 @@ class CaptchaSolver:
 
         self.reader = easyocr.Reader(['en'], model_storage_directory=model_dir, gpu=False)
         self.allowlist = eng_alb_lowercase + eng_alb_uppercase + numbers
-        self.server_captcha = TwoCaptcha(apiKey=API_KEY_2CAPTCHA, pollingInterval=3)
+        self.server_captcha = TwoCaptcha(apiKey=API_KEY_2CAPTCHA, pollingInterval=5)
 
     async def get_from_ocr(self, image: Image):
         pixels = image.load()

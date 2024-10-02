@@ -1,5 +1,5 @@
 from aiogram.types import CallbackQuery
-from aiogram_dialog import DialogManager, ShowMode
+from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.kbd import Button
 from aiogram_dialog.widgets.kbd.select import ManagedMultiselect
 from models import Bank

@@ -1,15 +1,14 @@
-from asyncio import sleep
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
-from json import dumps
 from typing import Any
 from PIL import Image
 from cryptography.fernet import Fernet
 from playwright.async_api import async_playwright, Page, Browser
-from components.enums import BankStatus, BankType
+from models import BankStatus, BankType
 from components.pydantic_models import MaybankData
-from tasks.src.config import SECRET_KEY, PW_OPTS
-from models import Bank, PaymentAccount, Transaction, User
+from modules.logger import Logger
+from config import SECRET_KEY, PW_OPTS, APP_NAME
+from models import Bank, PaymentAccount, Transaction
 from modules.ocr.ocr import CaptchaSolver
 
 
@@ -95,9 +94,10 @@ class Maybank:
         for page in self.pages:
             frame = page.frame_locator("#frameSet_1_8_content")
             await frame.get_by_text("Transaction Activity").click()
-            await page.wait_for_timeout(3000)
+            await page.wait_for_timeout(4000)
 
         # Сохраняем выписки ----------------------------------------------------------------------------------------
+        current_pas = await PaymentAccount.filter(bank__type=BankType.MAYBANK).all()
         pas_statements = []
         i = 0
         len_pages = len(self.pages)
@@ -120,18 +120,23 @@ class Maybank:
             i += 1
 
             for payment_account in pages_index_pas:
-                for page in self.pages:
+                for page, bank in zip(self.pages, self.banks):
+                    start_date = (datetime(year=datetime.now().year, month=1, day=1)).strftime("%Y-%m-%d")
+                    for pa in current_pas:
+                        if (pa.bank_id == bank.id) and (pa.number == payment_account["number"]) and (pa.currency == payment_account["currency"]):
+                            start_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+                            break
+
                     frame = page.frame_locator("#frameSet_1_8_content")
                     # todo получить последнюю дату отгрузки
-                    await frame.locator(
-                        "#searchCriteriaLabel2 .input_value[name='transactionHistoryVO.dateFrom']").evaluate(
-                        "(element, value) => element.value = value", "2024-01-01")
+                    await frame.locator("#searchCriteriaLabel2 .input_value[name='transactionHistoryVO.dateFrom']").evaluate(
+                        "(element, value) => element.value = value", start_date)
                     await frame.locator("#searchCriteriaLabel1 input[name='corpVO.accountNumber']").evaluate(
                         "(element, value) => element.value = value", payment_account["number"])
                     await frame.locator("#searchCriteriaLabel1 input[name='corpVO.currencyCode']").evaluate(
                         "(element, value) => element.value = value", payment_account["currency"])
                     await frame.locator("#searchCriteriaLabel2 #ui_button_label_goButton").click()
-                    await page.wait_for_timeout(3000)
+                    await page.wait_for_timeout(4000)
 
                 for page, bank in zip(self.pages, self.banks):
                     frame = page.frame_locator("#frameSet_1_8_content")
@@ -186,16 +191,7 @@ class Maybank:
         return pas_statements
 
     async def load_stats(self) -> None:
-        # f = Fernet(SECRET_KEY)
-        # auth_data = f.encrypt(dumps({"corporate_id": "IDUNIV16143", "user_id": "DMITR001", "password": "MayBank12345"}).encode())
-        # await User.create(id=1)
-        #
-        # await Bank.create(
-        #     user_id=1,
-        #     name="test",
-        #     type="Maybank",
-        #     json_hash_data=auth_data
-        # )
+        await Logger(APP_NAME).info(msg="Начинаю подгрузку выписок из Maybank.", func_name="maybank.load_stats")
 
         async with (async_playwright() as pw):
             browser = await pw.chromium.launch(args=PW_OPTS, headless=False)
@@ -210,45 +206,22 @@ class Maybank:
             # Получаем список транзакций
             load_transactions = await self.__get_transactions(pages_pas=banks_pas)
 
-            # Создаем расчетные счета если их нет
-            system_pas = await PaymentAccount.filter(bank__type=BankType.MAYBANK).all()
-
-            # Формируем список системных расчетных счетов в нужном формате
-            system_dict_pas = []
-            for pas in system_pas:
-                system_dict_pas.append({
-                    "number": pas.number,
-                    "currency": pas.currency,
-                    "bank_id": pas.bank_id
-                })
-
-            # Формируем список всех расчетных счетов из списков
-            banks_all_pas = []
-            for pas in banks_pas:
-                for pa in pas:
-                    banks_all_pas.append(pa)
-
             # Формируем список расчетных счетов на создание
             pas_to_create = []
-            for pa in banks_all_pas:
-                if pa not in system_dict_pas:
-                    pas_to_create.append(PaymentAccount(number=pa["number"],
-                                                        currency=pa["currency"],
-                                                        bank_id=pa["bank_id"]))
+            for pas in banks_pas:
+                for pa in pas:
+                    pas_to_create.append(PaymentAccount(number=pa["number"], currency=pa["currency"], bank_id=pa["bank_id"]))
 
             # Создаем недостающие расчетные счета
             await PaymentAccount.bulk_create(pas_to_create, ignore_conflicts=True)
 
-            # Формируем список транзакций на создание
+            # Формируем список транзакций на создание ------------------------------------------------------------------
             all_pas = await PaymentAccount.filter(bank__type=BankType.MAYBANK).values("id", "number", "currency",
                                                                                       "bank_id")
-
-            print(load_transactions)
             transactions_to_create = []
             for trxn in load_transactions:
                 for pa in all_pas:
-                    if (pa["number"] == trxn["pa_number"] and pa["currency"] == trxn["pa_currency"] and
-                            pa["bank_id"] == trxn["pa_bank_id"]):
+                    if (pa["number"] == trxn["pa_number"]) and (pa["currency"] == trxn["pa_currency"]) and (pa["bank_id"] == trxn["pa_bank_id"]):
                         split_unfrmt_date = trxn["date"].split(" ")
                         time_trxn = datetime(year=int(split_unfrmt_date[2]),
                                              month=self.months.index(split_unfrmt_date[1]) + 1,
@@ -263,5 +236,5 @@ class Maybank:
                         break
 
             await Transaction.bulk_create(transactions_to_create, ignore_conflicts=True)
-            print("done")
-            await sleep(1000000)
+
+        await Logger(APP_NAME).success(msg="Подгрузка завершена.", func_name="maybank.load_stats")
