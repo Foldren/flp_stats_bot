@@ -12,7 +12,7 @@ services:
       POSTGRES_DB: ${PSQL_DB}
       TZ: Europe/Moscow
     ports:
-      - 127.0.0.1:15432:5432
+      - 15432:5432
     networks:
       - statement_bot_network
     volumes:
@@ -27,7 +27,7 @@ services:
       - ./.env
     command: redis-server --requirepass ${REDIS_PSW} --loadmodule /opt/redis-stack/lib/redisearch.so --loadmodule /opt/redis-stack/lib/rejson.so
     ports:
-      - 127.0.0.1:16379:6379
+      - 16379:6379
     networks:
       - statement_bot_network
     volumes:
@@ -53,8 +53,10 @@ services:
     restart: unless-stopped
     environment:
       - TZ=Europe/Moscow
+    tty: true
     depends_on:
-      - bot
+      - cache
+      - db
     networks:
       - statement_bot_network
     volumes:

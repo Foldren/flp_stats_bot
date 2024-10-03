@@ -38,7 +38,7 @@ w_set_name = Window(
         sep="\n\n"
     ),
     Row(
-        Back(text=Const("Поменять тип ⬅️")),
+        Back(text=Const("Назад ⬅️")),
         Cancel(text=Const("Отмена ⛔️"))
     ),
     MessageInput(func=on_set_name, content_types=[ContentType.TEXT]),
@@ -59,7 +59,7 @@ w_set_creds = Window(
         sep="\n\n"
     ),
     Row(
-        Back(text=Const("Поменять название ⬅️")),
+        Back(text=Const("Назад ⬅️")),
         Cancel(text=Const("Отмена ⛔️"))
     ),
     MessageInput(func=on_set_creds, content_types=[ContentType.TEXT]),

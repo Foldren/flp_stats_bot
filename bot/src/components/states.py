@@ -21,4 +21,5 @@ class DeleteBanksStates(StatesGroup):
 
 class UploadStates(StatesGroup):
     select_bank = State()
-    select_interval = State()
+    select_start_date = State()
+    select_end_date = State()

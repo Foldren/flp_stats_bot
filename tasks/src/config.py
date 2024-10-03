@@ -5,13 +5,31 @@ load_dotenv()
 
 ROOT_DIR = getcwd()
 
-SQL_URL = getenv('SQL_URL')
-
 APP_NAME = "stats_tasks"
 
 API_KEY_2CAPTCHA = getenv("API_KEY_2CAPTCHA")
 
 SECRET_KEY = getenv("SECRET_KEY")
+
+TORTOISE_CONFIG = {
+    "connections": {
+        "default": {
+            "engine": "tortoise.backends.asyncpg",
+            "credentials": {
+                "user": getenv("PG_USER"),
+                "password": getenv("PG_PSW"),
+                "host": getenv("PG_HOST"),
+                "port": getenv("PG_PORT"),
+                "database": getenv("PG_DB"),
+            }
+        }
+    },
+    "apps": {
+        "models": {"models": ["models"], "default_connection": "default"},
+    },
+    'use_tz': True,
+    'timezone': 'Europe/Moscow'
+}
 
 PW_OPTS = (
     '--start-maximized',

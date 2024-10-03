@@ -45,8 +45,10 @@ class PaymentAccount(Model):
 
 class Transaction(Model):
     id = BigIntField(pk=True)
-    p_account: ForeignKeyRelation['PaymentAccount'] = ForeignKeyField('models.PaymentAccount', on_delete=OnDelete.CASCADE,
+    p_account: ForeignKeyRelation['PaymentAccount'] = ForeignKeyField('models.PaymentAccount',
+                                                                      on_delete=OnDelete.CASCADE,
                                                                       related_name="transactions")
     trxn_id = CharField(max_length=40, null=True)
+    description = CharField(max_length=255, null=True)
     time = DatetimeField()
     amount = FloatField()

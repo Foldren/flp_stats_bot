@@ -1,5 +1,4 @@
 from datetime import date, datetime
-
 from aiogram import F
 from aiogram_dialog import Window
 from aiogram_dialog.widgets.kbd import Cancel, ScrollingGroup, Select, Row, Back, CalendarConfig, Calendar
@@ -25,7 +24,7 @@ w_select_bank = Window(
     Cancel(text=Const("Отмена ⛔️️")),
     ScrollingGroup(
         Select(
-            text=Format("{item}"),
+            text=Format("{item.name}"),
             items="banks",
             item_id_getter=lambda bank: bank.id,
             on_click=on_select_bank,
@@ -45,7 +44,7 @@ w_select_start_date = Window(
     Multi(
         Const(f"<b>Выгрузка:</b> <i>(шаг 2)</i>"),
         Const(f"📆 Выберите начальную дату отгрузки:"),
-        Format("<u>Выбран банк</u>: {dialog_data[sel_bank_name]}"),
+        Format("<u>Выбран банк</u>: {dialog_data[bank_name]}"),
         sep="\n\n"
     ),
     Calendar(id='upload_s_calendar',
@@ -53,17 +52,17 @@ w_select_start_date = Window(
              config=CalendarConfig(min_date=date(year=1991, month=1, day=1), max_date=datetime.now().date())
              ),
     Row(
-        Back(text=Const("Поменять банк ⬅️")),
+        Back(text=Const("Назад ⬅️")),
         Cancel(text=Const("Отмена ⛔️"))
     ),
-    state=UploadStates.select_interval,
+    state=UploadStates.select_start_date,
 )
 
 w_select_end_date = Window(
     Multi(
         Const(f"<b>Выгрузка:</b> <i>(шаг 2)</i>"),
         Const(f"📆 Выберите итоговую дату отгрузки:"),
-        Format("<u>Выбран банк</u>: {dialog_data[sel_bank_name]}\n"
+        Format("<u>Выбран банк</u>: {dialog_data[bank_name]}\n"
                "<u>Выбрана стартовая дата</u>: {dialog_data[start_date]}"),
         sep="\n\n"
     ),
@@ -72,8 +71,8 @@ w_select_end_date = Window(
              config=CalendarConfig(min_date=date(year=1991, month=1, day=1), max_date=datetime.now().date())
              ),
     Row(
-        Back(text=Const("Поменять стартовую дату ⬅️")),
+        Back(text=Const("Назад ⬅️")),
         Cancel(text=Const("Отмена ⛔️"))
     ),
-    state=UploadStates.select_interval,
+    state=UploadStates.select_end_date,
 )

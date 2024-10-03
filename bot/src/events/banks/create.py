@@ -21,7 +21,7 @@ async def on_set_name(message: Message, widget: MessageInput, dialog_manager: Di
 
 async def on_set_creds(message: Message, widget: MessageInput, dialog_manager: DialogManager):
     dialog_manager.show_mode = ShowMode.DELETE_AND_SEND
-    creds = message.text.strip().split(",")
+    creds = message.text.split(",")
     params = BANKS_CREDS[dialog_manager.dialog_data['type']]
 
     if len(creds) != len(params):
@@ -30,7 +30,7 @@ async def on_set_creds(message: Message, widget: MessageInput, dialog_manager: D
 
     auth_data = {}
     for param, cred in zip(params, creds):
-        auth_data[param] = cred
+        auth_data[param] = cred.strip()
 
     f = Fernet(SECRET_KEY)
     auth_data = f.encrypt(dumps(auth_data).encode())

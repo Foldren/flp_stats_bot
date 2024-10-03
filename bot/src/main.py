@@ -10,7 +10,7 @@ from aiogram_dialog import setup_dialogs, DialogManager, StartMode, ShowMode
 from redis.asyncio import Redis
 from tortoise import run_async
 from tortoise.exceptions import IntegrityError
-from components.dialogs import d_menu, d_get_banks, d_create_bank, d_delete_banks
+from components.dialogs import d_menu, d_get_banks, d_create_bank, d_delete_banks, d_upload
 from components.states import MenuStates
 from config import TOKEN, REDIS_URL
 from init import init_db
@@ -19,7 +19,7 @@ from models import User
 # Используемые базы данных Redis
 # db0 - кеш для стейтов бота
 
-dialogs = (d_menu, d_get_banks, d_create_bank, d_delete_banks,)
+dialogs = (d_menu, d_get_banks, d_create_bank, d_delete_banks, d_upload)
 dp = Dispatcher(storage=RedisStorage(Redis.from_url(REDIS_URL, db=0), DefaultKeyBuilder(with_destiny=True)))
 
 
