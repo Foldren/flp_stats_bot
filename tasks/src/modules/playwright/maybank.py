@@ -1,15 +1,13 @@
-from asyncio import run
 from datetime import datetime, timedelta
 from io import BytesIO
 from typing import Any
 from PIL import Image
 from cryptography.fernet import Fernet
 from playwright.async_api import async_playwright, Page, Browser
-from tortoise import Tortoise
 from models import BankStatus, BankType
 from components.pydantic_models import MaybankData
 from modules.logger import Logger
-from config import SECRET_KEY, PW_OPTS, APP_NAME, TORTOISE_CONFIG
+from config import SECRET_KEY, PW_OPTS, APP_NAME, TORTOISE_CONFIG, BOT
 from models import Bank, PaymentAccount, Transaction
 from modules.ocr.ocr import CaptchaSolver
 
@@ -224,6 +222,17 @@ class Maybank:
             load_transactions = await self.__get_transactions(pages_pas=banks_pas)
 
             if load_transactions:
+                for bank in self.banks:
+                    new_trxns_msg = f"<b>🟢 Новые выписки по {bank.type} банку: {bank.name}</b>\n\n"
+                    for transaction in load_transactions:
+                        if transaction["pa_bank_id"] == bank.id:
+                            new_trxns_msg += f"<u>ID:</u> {transaction['id']}\n"
+                            new_trxns_msg += f"<u>Дата:</u> {transaction['date']}\n"
+                            new_trxns_msg += f"<u>Описание:</u> {transaction['description']}\n"
+                            new_trxns_msg += f"<u>Сумма:</u> {transaction['amount']}\n\n"
+
+                    await BOT.send_message(chat_id=bank.user_id, text=new_trxns_msg)
+
                 # Формируем список расчетных счетов на создание
                 pas_to_create = []
                 for pas in banks_pas:

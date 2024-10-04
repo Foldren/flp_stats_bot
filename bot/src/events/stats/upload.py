@@ -1,3 +1,4 @@
+import json
 from datetime import date, datetime
 from io import BytesIO
 from aiogram.types import CallbackQuery, BufferedInputFile
@@ -5,6 +6,7 @@ from aiogram_dialog import DialogManager, ShowMode
 from aiogram_dialog.widgets.kbd import Button
 from openpyxl.reader.excel import load_workbook
 from openpyxl.styles import Alignment
+from pytz import timezone
 from tortoise.expressions import Q
 from config import EXCEL_TEMPLATE_PATH
 from models import Bank, PaymentAccount, Transaction
@@ -29,14 +31,13 @@ async def on_select_end_date(callback: CallbackQuery, widget, dialog_manager: Di
 
     output = BytesIO()
     wb = load_workbook(filename=EXCEL_TEMPLATE_PATH)
-    ws = wb.active
 
     d_start_dt = datetime.strptime(start_date, '%Y-%m-%d')
     d_end_dt = datetime.strptime(end_date, '%Y-%m-%d')
     expression = (Q(p_account__bank_id=bank_id) &
                   (Q(time__range=[d_start_dt, d_end_dt]) | Q(time__startswith=start_date) | Q(time__startswith=end_date)))
 
-    transactions = await Transaction.filter(expression).select_related("p_account").all()
+    transactions = await Transaction.filter(expression).select_related("p_account").order_by("time").all()
 
     pa_trxns = {}
     for trxn in transactions:
@@ -53,12 +54,12 @@ async def on_select_end_date(callback: CallbackQuery, widget, dialog_manager: Di
 
     for pa_number_cur, transactions in pa_trxns.items():
         # Устанавливаем имя листа
-        ws = wb.copy_worksheet(ws)
+        ws = wb.copy_worksheet(wb["start"])
         ws.title = pa_number_cur
 
         for i, trxn in enumerate(transactions, start=2):
-            ws[f'A{i}'] = trxn.id
-            ws[f'B{i}'] = datetime.isoformat(trxn.time)
+            ws[f'A{i}'] = trxn.trxn_id if trxn.trxn_id is not None else "-"
+            ws[f'B{i}'] = trxn.time.strftime('%Y-%m-%d %H:%S')
             ws[f'C{i}'] = trxn.description
             ws[f'D{i}'] = trxn.amount
             ws[f'C{i}'].alignment = Alignment(wrap_text=True)

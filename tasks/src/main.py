@@ -17,7 +17,7 @@ async def lifespan(_: AioClock):
 app = AioClock(lifespan=lifespan)
 
 
-@app.task(trigger=Every(hours=3))#At(tz="Europe/Moscow", hour=3, minute=5))
+@app.task(trigger=Every(hours=1))#At(tz="Europe/Moscow", hour=3, minute=5))
 async def load_stats():
     """
     Таск на подгрузку выписок, подгружает каждый день в 3 часа ночи.
