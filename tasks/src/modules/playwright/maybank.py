@@ -224,7 +224,12 @@ class Maybank:
             if load_transactions:
                 for bank in self.banks:
                     new_trxns_msg = f"<b>🟢 Новые выписки по {bank.type} банку: {bank.name}</b>\n\n"
+                    pa_name = ""
                     for transaction in load_transactions:
+                        if pa_name != str(transaction["pa_number"]) + " " + transaction["pa_currency"]:
+                            pa_name = str(transaction["pa_number"]) + " " + transaction["pa_currency"]
+                            new_trxns_msg += f"<b>📑 Счёт {pa_name}</b>\n\n"
+
                         if transaction["pa_bank_id"] == bank.id:
                             new_trxns_msg += f"<u>ID:</u> {transaction['id']}\n"
                             new_trxns_msg += f"<u>Дата:</u> {transaction['date']}\n"
