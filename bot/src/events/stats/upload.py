@@ -28,29 +28,35 @@ async def on_select_end_date(callback: CallbackQuery, widget, dialog_manager: Di
     bank_id = dialog_manager.dialog_data["bank_id"]
     start_date = dialog_manager.dialog_data["start_date"]
     end_date = selected_date.__str__()
-
-    output = BytesIO()
-    wb = load_workbook(filename=EXCEL_TEMPLATE_PATH)
-
     d_start_dt = datetime.strptime(start_date, '%Y-%m-%d')
     d_end_dt = datetime.strptime(end_date, '%Y-%m-%d')
     expression = (Q(p_account__bank_id=bank_id) &
                   (Q(time__range=[d_start_dt, d_end_dt]) | Q(time__startswith=start_date) | Q(time__startswith=end_date)))
 
+    p_accounts = await PaymentAccount.filter(bank_id=bank_id).all()
+
+    if not p_accounts:
+        await callback.message.answer("⛔️ Пока нет ниодного расчетного счета по данному банку, подождите подгрузку.")
+        await callback.message.delete()
+        await dialog_manager.done()
+        return
+
     transactions = await Transaction.filter(expression).select_related("p_account").order_by("time").all()
 
+    if not transactions:
+        await callback.message.answer("⛔️ За данный период нет транзакций.")
+        await callback.message.delete()
+        await dialog_manager.done()
+        return
+
+    output = BytesIO()
+    wb = load_workbook(filename=EXCEL_TEMPLATE_PATH)
     pa_trxns = {}
     for trxn in transactions:
         try:
             pa_trxns[str(trxn.p_account.number) + " " + trxn.p_account.currency].append(trxn)
         except KeyError:
             pa_trxns[str(trxn.p_account.number) + " " + trxn.p_account.currency] = [trxn]
-
-    if not transactions:
-        await callback.message.answer("⛔️ Пока нет ниодного расчетного счета по данному банку, подождите подгрузку.")
-        await callback.message.delete()
-        await dialog_manager.done()
-        return
 
     for pa_number_cur, transactions in pa_trxns.items():
         # Устанавливаем имя листа
